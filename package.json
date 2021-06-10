@@ -1,5 +1,5 @@
 {
-  "name": "ethan-utils",
+  "name": "ethan-util",
   "version": "1.0.1",
   "description": "开发常用工具、方法",
   "main": "lib/index.js",

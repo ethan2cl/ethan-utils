@@ -1,3 +1,7 @@
-export const Greeter = (name: string) => `Hello ${name}`;
+export type IString = Record<string, string>
 
-const a = 1;
+export let A: IString = {
+  a : 'a',
+  b : 'b',
+  c : 'c',
+}
