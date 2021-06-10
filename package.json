@@ -16,5 +16,7 @@
   "dependencies": {
     "typescript": "^4.3.2"
   },
-  "files": ["lib/**/*"]
+  "files": [
+    "lib/**/*"
+  ]
 }
