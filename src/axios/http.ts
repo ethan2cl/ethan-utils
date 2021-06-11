@@ -1,65 +1,59 @@
-
 import axios from 'axios'
-import type { HttpMethodName, AxiosRequestConfig, Http } from './types'
+import { serialize } from '../utils/serialize'
+import type { HttpMethodName, AxiosRequestConfig, CreateHttp, Http } from './types'
 
-// axios 默认配置
-const DEFAULT_CONFIG: AxiosRequestConfig = {
-  // 请求超时时间
-  timeout: 15 * 1000
-}
+// const DEFAULT_CONFIG: AxiosRequestConfig = {
+//   timeout: 15 * 1000
+// }
 
-// 定义方法名称
+// for loop create httpMethod
 const methodName: HttpMethodName[] = [ 'get', 'post', 'put', 'delete' ]
 
-const http = {}
-
-methodName.forEach(method => {
-  (http as Http)[method] = (data, url, baseURL = '/') => {
-    // 1. create axios instance
-    const instance = axios.create(DEFAULT_CONFIG)
-
-    instance.interceptors.request.use(
-      (config: AxiosRequestConfig) => {
-        return config
-      }
-    ) 
-
-    instance.interceptors.response.use(
-      (responce) => {
-        return responce
-      },
-      err => Promise.reject(err)
-    )
-    // 3. organise request data
-    const requestData: AxiosRequestConfig = { method, url, baseURL }
-    // handle "data"(property)
-    if (method === 'get') {
-      requestData.params = data
-    } else if (data instanceof FormData) {
-      requestData.data = data
-    } else {
-      // transform data({ a: 1, b: 2 }) => ?a=1&b=2 
-      requestData.data = serialize(data)
-    }
-    
-    return instance
-      .request(requestData)
-      .then(response => Promise.resolve(response))
-      .catch(error => Promise.reject(error))
-  }
-});
+// interceptors err handle
+const errorHandler = (err: any) => Promise.reject(err)
 
 /**
- * request data serialize
- * @param params { object } 
+ * a method which can create a object,
+ * its has four properties (get, post, put, delete)
  */
-export const serialize = <T extends object> (params: T): string => {
-  let head = ''
-  for (let key in params) {
-    head += head === '' ? '?' : '&'
-    head += `${key}=${params[key]}`
-  }
-  return head
-}
+export const createHttp: CreateHttp = (props = {
+  baseURL: '/',
+  clearGetCache: false,
+  defaultConfig: {
+    timeout: 15 * 1000
+  },
+  requset: config => config,
+  response: response => response,
+}) => {
+  const { baseURL: baseurl, clearGetCache, defaultConfig, requset, response } = props
+  const http = {} 
+  methodName.forEach(method => {
+    (http as Http)[method] = (data, url, baseURL = baseurl) => {
+      // 1. create axios instance
+      const instance = axios.create(defaultConfig)
+  
+      // 2. add interceptors
+      instance.interceptors.request.use(requset, errorHandler) 
+      instance.interceptors.response.use(response,errorHandler)
 
-export default http as Http
+      // 3. create request data
+      const requestData: AxiosRequestConfig = { method, url, baseURL }
+      // handle "data"(property)
+      if (method === 'get') {
+        requestData.params = clearGetCache ? { ...data, ts: Date.now() } : data
+      } else if (data instanceof FormData) {
+        requestData.data = data
+      } else {
+        // transform data({ a: 1, b: 2 }) => ?a=1&b=2 
+        requestData.data = serialize(data)
+      }
+
+      // 4. send request
+      return instance
+        .request(requestData)
+        .then(response => Promise.resolve(response))
+        .catch(errorHandler)
+    }
+  });
+  return http as Http
+}
