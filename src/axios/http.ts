@@ -19,7 +19,7 @@ export const createHttp: CreateHttp = (props = {}) => {
       timeout: 15 * 1000
     },
     requset = config => config,
-    response = response => response
+    response = resp => resp
   } = props
   const http = {} 
   methodName.forEach(method => {
@@ -43,7 +43,7 @@ export const createHttp: CreateHttp = (props = {}) => {
       // 4. send request
       return instance
         .request(requestData)
-        .then(response => Promise.resolve(response))
+        .then(resp => Promise.resolve(resp))
         .catch(errorHandler)
     }
   });
